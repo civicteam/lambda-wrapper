@@ -7,10 +7,10 @@ const httpRunner = require('./httpRunner');
 // Wrapper class for AWS Lambda
 class Wrapped {
   constructor(mod, opts) {
-    const options = opts || {};
+    this.options = opts || {};
 
     this.lambdaModule = mod;
-    const handler = options.handler || 'handler';
+    const handler = this.options.handler || 'handler';
 
     if (mod[handler]) {
       this.handler = mod[handler];
@@ -31,8 +31,8 @@ class Wrapped {
     const lambda = new AWS.Lambda();
     const params = {
       FunctionName: this.lambdaModule.lambdaFunction,
-      InvocationType: 'RequestResponse',
-      LogType: 'None',
+      InvocationType: this.options.InvocationType || 'RequestResponse',
+      LogType: this.options.LogType ||'None',
       Payload: JSON.stringify(event)
     };
 
