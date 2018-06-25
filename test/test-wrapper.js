@@ -211,7 +211,7 @@ describe('lambda-wrapper local', () => {
       })
       .catch(done);
   });
-  
+
   it('wrap + run module 6 - exception', (done) => {
     const w = wrapper.wrap(testMod6);
 
@@ -258,7 +258,7 @@ if (process.env.RUN_LIVE) {
     it('can call lambda functions deployed in AWS - callback', (done) => {
       const w = wrapper.wrap({
         lambdaFunction: 'lambdaWrapper-test',
-        region: process.env.AWS_DEFAULT_REGION || 'eu-central-1'
+        region: process.env.AWS_DEFAULT_REGION || 'us-east-1'
       });
 
       w.run({ test: 'livesuccess' }, (err, response) => {
@@ -284,6 +284,18 @@ if (process.env.RUN_LIVE) {
           expect(response.event.test).to.be.equal('livesuccess');
           done();
         }).catch(done);
+    }).timeout(3000);
+
+
+    it('can call lambda functions deployed in AWS - async', () => {
+      const w = wrapper.wrap({
+        lambdaFunction: 'lambdaWrapper-test',
+        region: process.env.AWS_DEFAULT_REGION || 'us-east-1',
+      }, {
+        InvocationType: 'Event'
+      });
+
+      w.run({ test: 'livesuccess' });
     }).timeout(3000);
   });
 }

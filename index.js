@@ -17,6 +17,10 @@ class Wrapped {
     }
   }
 
+  isAsync() {
+    return this.options.InvocationType === 'Event';
+  }
+
   runDirect(event, context, cb) {
     this.handler(event, context, cb);
   }
@@ -36,15 +40,31 @@ class Wrapped {
       Payload: JSON.stringify(event)
     };
 
-    lambda.invoke(params, (err, data) => {
+    const safeParse = payload => {
+      try {
+        return JSON.parse(payload)
+      } catch (error) {
+        // just return the empty object as there was probably no payload
+        return {}
+      }
+    };
+
+    const decoratedCallback = (err, data) => {
       if (err) {
         return cb(err);
       }
       if (data.FunctionError) {
-        return cb(Object.assign(new Error(JSON.parse(data.Payload).errorMessage), data));
+        return cb(Object.assign(new Error(safeParse(data.Payload).errorMessage), data));
       }
-      return cb(null, JSON.parse(data.Payload));
-    });
+
+      return cb(null, safeParse(data.Payload));
+    };
+
+    if (this.isAsync()) {
+      lambda.invoke(params, decoratedCallback);
+    } else {
+      lambda.invoke(params, decoratedCallback);
+    }
   }
 
   runHttp(event, cb) {
@@ -52,17 +72,7 @@ class Wrapped {
   }
 
   runHandler(event, customContext, cb) {
-    return new Promise((resolve, reject) => {
-
-      const promiseCallback = (error, response) => {
-        if(error) {
-          return reject(error);
-        }
-        return resolve(response);
-      };
-
-      const callback = cb || promiseCallback;
-
+    const runInternal = (callback) => {
       const defaultContext = {
         succeed: success => callback(null, success),
         fail: error => callback(error, null),
@@ -74,19 +84,33 @@ class Wrapped {
       try {
         if (this.handler) {
           if (isFunction(this.handler)) {
-            this.runDirect(event, lambdaContext, callback);
+            return this.runDirect(event, lambdaContext, callback);
           } else {
-            reject('Handler is not a function');
+            return callback('Handler is not a function');
           }
         } else if (isString(this.lambdaModule)) {
-          this.runHttp(event, callback);
+          return this.runHttp(event, callback);
         } else {
-          this.runRemote(event, callback);
+          return this.runRemote(event, callback);
         }
       } catch (ex) {
         return callback(ex);
       }
-    });
+    };
+
+    return new Promise((resolve, reject) => {
+
+      const promiseCallback = (error, response) => {
+        if(error) {
+          return reject(error);
+        }
+        return resolve(response);
+      };
+
+      const callback = cb || promiseCallback;
+
+      return runInternal(callback);
+    })
   }
 
   run(event, context, callback) {
@@ -132,7 +156,7 @@ module.exports = exports = {
     let callbackFunction = callback;
     let contextObject = context;
     if (typeof context === 'function') {
-      // backwards compability
+      // backwards compatibility
       callbackFunction = context;
       contextObject = {};
     }
@@ -141,6 +165,11 @@ module.exports = exports = {
       reject(error);
       return callbackFunction(error, null);
     }
+
+    if (latest.options && latest.options.InvocationType === 'Event') {
+      return latest.run(event, contextObject)
+    }
+
     return latest.run(event, contextObject, (err, data) => {
       if (callbackFunction) {
         return callbackFunction(err, data);
@@ -150,5 +179,5 @@ module.exports = exports = {
       }
       return resolve(data);
     });
-  })
+  }),
 };
