@@ -1,5 +1,3 @@
-'use strict';
-
 const AWS = require('aws-sdk');
 
 const httpRunner = require('./httpRunner');
@@ -36,16 +34,16 @@ class Wrapped {
     const params = {
       FunctionName: this.lambdaModule.lambdaFunction,
       InvocationType: this.options.InvocationType || 'RequestResponse',
-      LogType: this.options.LogType ||'None',
+      LogType: this.options.LogType || 'None',
       Payload: JSON.stringify(event)
     };
 
     const safeParse = payload => {
       try {
-        return JSON.parse(payload)
+        return JSON.parse(payload);
       } catch (error) {
         // just return the empty object as there was probably no payload
-        return {}
+        return {};
       }
     };
 
@@ -72,7 +70,7 @@ class Wrapped {
   }
 
   runHandler(event, customContext, cb) {
-    const runInternal = (callback) => {
+    const runInternal = callback => {
       const defaultContext = {
         succeed: success => callback(null, success),
         fail: error => callback(error, null),
@@ -85,23 +83,21 @@ class Wrapped {
         if (this.handler) {
           if (isFunction(this.handler)) {
             return this.runDirect(event, lambdaContext, callback);
-          } else {
-            return callback('Handler is not a function');
           }
-        } else if (isString(this.lambdaModule)) {
-          return this.runHttp(event, callback);
-        } else {
-          return this.runRemote(event, callback);
+          return callback('Handler is not a function');
         }
+        if (isString(this.lambdaModule)) {
+          return this.runHttp(event, callback);
+        }
+        return this.runRemote(event, callback);
       } catch (ex) {
         return callback(ex);
       }
     };
 
     return new Promise((resolve, reject) => {
-
       const promiseCallback = (error, response) => {
-        if(error) {
+        if (error) {
           return reject(error);
         }
         return resolve(response);
@@ -110,7 +106,7 @@ class Wrapped {
       const callback = cb || promiseCallback;
 
       return runInternal(callback);
-    })
+    });
   }
 
   run(event, context, callback) {
@@ -143,8 +139,7 @@ let latest;
 
 // Public interface for the module
 
-module.exports = exports = {
-
+module.exports = {
   // reusable wrap method
   wrap,
 
@@ -152,32 +147,33 @@ module.exports = exports = {
   init: (mod, options) => {
     latest = wrap(mod, options);
   },
-  run: (event, context, callback) => new Promise((resolve, reject) => {
-    let callbackFunction = callback;
-    let contextObject = context;
-    if (typeof context === 'function') {
-      // backwards compatibility
-      callbackFunction = context;
-      contextObject = {};
-    }
-    if (typeof latest === typeof undefined) {
-      const error = 'Module not initialized';
-      reject(error);
-      return callbackFunction(error, null);
-    }
-
-    if (latest.options && latest.options.InvocationType === 'Event') {
-      return latest.run(event, contextObject)
-    }
-
-    return latest.run(event, contextObject, (err, data) => {
-      if (callbackFunction) {
-        return callbackFunction(err, data);
+  run: (event, context, callback) =>
+    new Promise((resolve, reject) => {
+      let callbackFunction = callback;
+      let contextObject = context;
+      if (typeof context === 'function') {
+        // backwards compatibility
+        callbackFunction = context;
+        contextObject = {};
       }
-      if (err) {
-        return reject(err);
+      if (typeof latest === typeof undefined) {
+        const error = 'Module not initialized';
+        reject(error);
+        return callbackFunction(error, null);
       }
-      return resolve(data);
-    });
-  }),
+
+      if (latest.options && latest.options.InvocationType === 'Event') {
+        return latest.run(event, contextObject);
+      }
+
+      return latest.run(event, contextObject, (err, data) => {
+        if (callbackFunction) {
+          return callbackFunction(err, data);
+        }
+        if (err) {
+          return reject(err);
+        }
+        return resolve(data);
+      });
+    })
 };
