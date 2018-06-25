@@ -5,7 +5,11 @@
   "main": "index.js",
   "scripts": {
     "test": "RUN_LIVE=true npm run unit-tests",
-    "unit-tests": "mocha"
+    "unit-tests": "cross-env NODE_ENV=test nyc --reporter=none mocha",
+    "coverage": "cross-env FORCE_COLOR=1 nyc report && nyc check-coverage",
+    "lint": "eslint --max-warnings=0 .",
+    "lint-autofix": "eslint --fix .",
+    "ci": "npm run test && npm run coverage && npm run lint"
   },
   "repository": {
     "type": "git",
@@ -27,11 +31,81 @@
   },
   "homepage": "https://github.com/nordcloud/lambda-wrapper",
   "devDependencies": {
+    "babel-eslint": "^8.2.5",
     "chai": "3.5.0",
-    "mocha": "2.4.5"
+    "cross-env": "^5.2.0",
+    "eslint": "^5.0.0",
+    "eslint-config-airbnb-base": "^13.0.0",
+    "eslint-config-prettier": "^2.9.0",
+    "eslint-plugin-import": "^2.13.0",
+    "eslint-plugin-import-order-autofix": "^0.8.3",
+    "eslint-plugin-prettier": "^2.6.1",
+    "mocha": "2.4.5",
+    "nyc": "^12.0.2",
+    "prettier": "^1.13.6"
   },
   "dependencies": {
     "aws-sdk": "^2.4.0",
     "node-fetch": "^2.0.0"
+  },
+  "nyc": {
+    "lines": 85,
+    "statements": 85,
+    "functions": 90,
+    "branches": 85,
+    "exclude": [
+      "test/*"
+    ]
+  },
+  "eslintConfig": {
+    "extends": [
+      "airbnb-base",
+      "plugin:prettier/recommended"
+    ],
+    "plugins": [
+      "import-order-autofix",
+      "prettier"
+    ],
+    "env": {
+      "node": true,
+      "mocha": true
+    },
+    "globals": {
+      "artifacts": true
+    },
+    "rules": {
+      "max-len": [
+        "error",
+        {
+          "code": 200
+        }
+      ],
+      "no-console": "off",
+      "func-names": [
+        "warn",
+        "never"
+      ],
+      "no-plusplus": [
+        "error",
+        {
+          "allowForLoopAfterthoughts": true
+        }
+      ],
+      "no-use-before-define": [
+        "error",
+        {
+          "functions": false,
+          "classes": true
+        }
+      ],
+      "prettier/prettier": [
+        "error",
+        {
+          "printWidth": 120,
+          "singleQuote": true
+        }
+      ],
+      "import-order-autofix/order": "error"
+    }
   }
 }

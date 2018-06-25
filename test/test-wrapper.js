@@ -1,9 +1,7 @@
-'use strict';
 const http = require('http');
 
+const { expect } = require('chai');
 const wrapper = require('../index.js');
-const httpRunner = require('../httpRunner.js');
-const expect = require('chai').expect;
 
 const testMod1 = {
   handler: (event, context) => {
@@ -44,135 +42,136 @@ const testMod5 = {
 
 // causes exception
 const testMod6 = {
-  handler: (event, context, callback) => {
-    throw 'TestException';
+  handler: () => {
+    throw Error('TestException');
   }
-}
+};
 
 describe('lambda-wrapper local', () => {
-  it('init + run with success - callback', (done) => {
+  it('init + run with success - callback', done => {
     wrapper.init(testMod1);
 
-    wrapper.run({test: 'success'}, (err, response) => {
+    wrapper.run({ test: 'success' }, (err, response) => {
       expect(response).to.be.equal('Success');
       done();
     });
   });
 
-  it('init + run with success - promise', (done) => {
+  it('init + run with success - promise', done => {
     wrapper.init(testMod1);
 
-    wrapper.run({test: 'success'})
-      .then((response) => {
+    wrapper
+      .run({ test: 'success' })
+      .then(response => {
         expect(response).to.be.equal('Success');
         done();
       })
       .catch(done);
   });
 
-  it('init + run with failure - callback', (done) => {
+  it('init + run with failure - callback', done => {
     wrapper.init(testMod1);
 
-    wrapper.run({test: 'fail'}, (err, response) => {
+    wrapper.run({ test: 'fail' }, err => {
       expect(err).to.be.equal('Fail');
       done();
     });
   });
 
-  it('init + run with failure - promise', (done) => {
+  it('init + run with failure - promise', done => {
     wrapper.init(testMod1);
 
-    wrapper.run({test: 'fail'}).catch((err) => {
+    wrapper.run({ test: 'fail' }).catch(err => {
       expect(err).to.be.equal('Fail');
       done();
     });
   });
 
-  it('wrap + run module 2 - callback', (done) => {
+  it('wrap + run module 2 - callback', done => {
     const w = wrapper.wrap(testMod2);
 
-    w.run({foo: 'bar'}, (err, response) => {
+    w.run({ foo: 'bar' }, (err, response) => {
       expect(response.foo).to.be.equal('bar');
       done();
     });
   });
 
-  it('wrap + run module 2 - promise', (done) => {
+  it('wrap + run module 2 - promise', done => {
     const w = wrapper.wrap(testMod2);
 
-    w.run({foo: 'bar'})
-      .then((response) => {
+    w.run({ foo: 'bar' })
+      .then(response => {
         expect(response.foo).to.be.equal('bar');
         done();
       })
       .catch(done);
   });
 
-  it('wrap + run module 1 - callback', (done) => {
+  it('wrap + run module 1 - callback', done => {
     const w = wrapper.wrap(testMod1);
 
-    w.run({test: 'success'}, (err, response) => {
+    w.run({ test: 'success' }, (err, response) => {
       expect(response).to.be.equal('Success');
       done();
     });
   });
 
-  it('wrap + run module 1 - promise', (done) => {
+  it('wrap + run module 1 - promise', done => {
     const w = wrapper.wrap(testMod1);
 
-    w.run({test: 'success'})
-      .then((response) => {
+    w.run({ test: 'success' })
+      .then(response => {
         expect(response).to.be.equal('Success');
         done();
       })
       .catch(done);
   });
 
-  it('wrap + run module 3 (callback notation) - callback', (done) => {
+  it('wrap + run module 3 (callback notation) - callback', done => {
     const w = wrapper.wrap(testMod3);
 
-    w.run({test: 'cbsuccess'}, (err, response) => {
+    w.run({ test: 'cbsuccess' }, (err, response) => {
       expect(response.test).to.be.equal('cbsuccess');
       done();
     });
   });
 
-  it('wrap + run module 3 (callback notation) - promise', (done) => {
+  it('wrap + run module 3 (callback notation) - promise', done => {
     const w = wrapper.wrap(testMod3);
 
-    w.run({test: 'cbsuccess'})
-      .then((response) => {
+    w.run({ test: 'cbsuccess' })
+      .then(response => {
         expect(response.test).to.be.equal('cbsuccess');
         done();
       })
       .catch(done);
   });
 
-  it('wrap + run module 4 (alternate handler) - callback', (done) => {
+  it('wrap + run module 4 (alternate handler) - callback', done => {
     const w = wrapper.wrap(testMod4, {
       handler: 'myHandler'
     });
 
-    w.run({test: 'cbsuccess'}, (err, response) => {
+    w.run({ test: 'cbsuccess' }, (err, response) => {
       expect(response.test).to.be.equal('cbsuccess');
       done();
     });
   });
 
-  it('wrap + run module 4 (alternate handler) - promise', (done) => {
+  it('wrap + run module 4 (alternate handler) - promise', done => {
     const w = wrapper.wrap(testMod4, {
       handler: 'myHandler'
     });
 
-    w.run({test: 'cbsuccess'})
-      .then((response) => {
+    w.run({ test: 'cbsuccess' })
+      .then(response => {
         expect(response.test).to.be.equal('cbsuccess');
         done();
       })
       .catch(done);
   });
 
-  it('wrap + runHandler module 5 (custom context) - callback', (done) => {
+  it('wrap + runHandler module 5 (custom context) - callback', done => {
     const w = wrapper.wrap(testMod5);
 
     w.runHandler({ test: 'cbsuccess' }, { functionName: 'testing' }, (err, response) => {
@@ -181,18 +180,18 @@ describe('lambda-wrapper local', () => {
     });
   });
 
-  it('wrap + runHandler module 5 (custom context) - promise', (done) => {
+  it('wrap + runHandler module 5 (custom context) - promise', done => {
     const w = wrapper.wrap(testMod5);
 
     w.runHandler({ test: 'cbsuccess' }, { functionName: 'testing' })
-      .then((response) => {
+      .then(response => {
         expect(response.test).to.be.equal('testing');
         done();
       })
       .catch(done);
   });
 
-  it('wrap + run module 5 (custom context) - callback', (done) => {
+  it('wrap + run module 5 (custom context) - callback', done => {
     const w = wrapper.wrap(testMod5);
 
     w.run({ test: 'cbsuccess' }, { functionName: 'testing' }, (err, response) => {
@@ -201,44 +200,48 @@ describe('lambda-wrapper local', () => {
     });
   });
 
-  it('wrap + run module 5 (custom context) - promise', (done) => {
+  it('wrap + run module 5 (custom context) - promise', done => {
     const w = wrapper.wrap(testMod5);
 
     w.run({ test: 'cbsuccess' }, { functionName: 'testing' })
-      .then((response) => {
+      .then(response => {
         expect(response.test).to.be.equal('testing');
         done();
       })
       .catch(done);
   });
 
-  it('wrap + run module 6 - exception', (done) => {
+  it('wrap + run module 6 - exception', done => {
     const w = wrapper.wrap(testMod6);
 
     w.run({ test: 'cbsuccess' }, { functionName: 'testing' })
-      .then((response) => {
-        done('Did not return error');
-      }, (error) => {
-        expect(error).to.be.equal('TestException');
-        done();
-        console.log(error);
-      })
+      .then(
+        () => {
+          done('Did not return error');
+        },
+        error => {
+          expect(error.message).to.equal('TestException');
+          done();
+          console.log(error);
+        }
+      )
       .catch(done);
   });
 });
 
 describe('httpRunner', () => {
-  it('can make an http call', function (done) {
+  it('can make an http call', done => {
     const port = process.env.PORT || 3101;
-    const url = 'http://localhost:' + port;
+    const url = `http://localhost:${port}`;
 
     const w = wrapper.wrap(url);
 
     const requestHandler = (request, response) => {
-      response.end(JSON.stringify({
-        Payload:
-          JSON.stringify({ test: 'success' })
-      }))
+      response.end(
+        JSON.stringify({
+          Payload: JSON.stringify({ test: 'success' })
+        })
+      );
     };
 
     const server = http.createServer(requestHandler);
@@ -249,53 +252,56 @@ describe('httpRunner', () => {
       expect(response.test).to.be.equal('success');
 
       server.close(done);
-    })
+    });
   });
 });
 
-if (process.env.RUN_LIVE) {
-  describe('lambda-wrapper live', () => {
-    it('can call lambda functions deployed in AWS - callback', (done) => {
-      const w = wrapper.wrap({
-        lambdaFunction: 'lambdaWrapper-test',
-        region: process.env.AWS_DEFAULT_REGION || 'us-east-1'
-      });
+// if (process.env.RUN_LIVE) {
+describe('lambda-wrapper live', () => {
+  it('can call lambda functions deployed in AWS - callback', done => {
+    const w = wrapper.wrap({
+      lambdaFunction: 'lambdaWrapper-test',
+      region: process.env.AWS_DEFAULT_REGION || 'us-east-1'
+    });
 
-      w.run({ test: 'livesuccess' }, (err, response) => {
-        if (err) {
-          return done(err);
-        }
+    w.run({ test: 'livesuccess' }, (err, response) => {
+      if (err) {
+        return done(err);
+      }
 
+      expect(response.src).to.be.equal('lambda');
+      expect(response.event.test).to.be.equal('livesuccess');
+      return done();
+    });
+  }).timeout(3000);
+
+  it('can call lambda functions deployed in AWS - promise', done => {
+    const w = wrapper.wrap({
+      lambdaFunction: 'lambdaWrapper-test',
+      region: process.env.AWS_DEFAULT_REGION || 'us-east-1'
+    });
+
+    w.run({ test: 'livesuccess' })
+      .then(response => {
         expect(response.src).to.be.equal('lambda');
         expect(response.event.test).to.be.equal('livesuccess');
         done();
-      });
-    }).timeout(3000);
+      })
+      .catch(done);
+  }).timeout(3000);
 
-    it('can call lambda functions deployed in AWS - promise', (done) => {
-      const w = wrapper.wrap({
+  it('can call lambda functions deployed in AWS - async', () => {
+    const w = wrapper.wrap(
+      {
         lambdaFunction: 'lambdaWrapper-test',
         region: process.env.AWS_DEFAULT_REGION || 'us-east-1'
-      });
-
-      w.run({ test: 'livesuccess' })
-        .then((response) => {
-          expect(response.src).to.be.equal('lambda');
-          expect(response.event.test).to.be.equal('livesuccess');
-          done();
-        }).catch(done);
-    }).timeout(3000);
-
-
-    it('can call lambda functions deployed in AWS - async', () => {
-      const w = wrapper.wrap({
-        lambdaFunction: 'lambdaWrapper-test',
-        region: process.env.AWS_DEFAULT_REGION || 'us-east-1',
-      }, {
+      },
+      {
         InvocationType: 'Event'
-      });
+      }
+    );
 
-      w.run({ test: 'livesuccess' });
-    }).timeout(3000);
-  });
-}
+    w.run({ test: 'livesuccess' });
+  }).timeout(6000);
+});
+// }
