@@ -1,6 +1,6 @@
 process.env.AWS_XRAY_CONTEXT_MISSING = 'LOG_ERROR';
 const AWSXRay = require('aws-xray-sdk-core');
-const AWS = AWSXRay.captureAWS(require('aws-sdk'))
+const AWS = AWSXRay.captureAWS(require('aws-sdk'));
 
 const httpRunner = require('./httpRunner');
 
